@@ -1,0 +1,10 @@
+/* ./src/index.css */
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+.pacifico-regular {
+  font-family: "Pacifico", serif;
+  font-weight: 400;
+  font-style: normal;
+}
