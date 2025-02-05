@@ -41,7 +41,7 @@
           <div class="mb-4">
             <h4 class="text-lg font-semibold text-gray-700">🗒️ Details:</h4>
             <p class="text-xl pacifico-regular text-gray-800 mt-1">
-              {{ entry.detail }}
+              {{ entry.source }}
             </p>
           </div>
           <div class="mt-4">
@@ -61,6 +61,7 @@
 <script setup>
 import { ref, defineEmits } from 'vue';
 import { defineProps } from 'vue';
+import Cookies from 'universal-cookie';
 
 // Define the props that will be passed from the parent component
 const props = defineProps({
@@ -71,6 +72,14 @@ const props = defineProps({
 });
 
 const emit = defineEmits(['update-success']);
+const apiUrl = import.meta.env.VITE_APP_API_URL;
+const cookies = new Cookies();
+const token = cookies.get('authToken'); 
+
+const headers = {
+  'Authorization': `Bearer ${token}`,
+  'Content-Type': 'application/json'
+};
 
 const editingId = ref(null);
 const editDay = ref('');
@@ -82,7 +91,7 @@ const editEntry = (entry) => {
   editingId.value = entry.id;
   editDay.value = entry.day;
   editDate.value = entry.date;
-  editDetail.value = entry.detail;
+  editDetail.value = entry.source;
   editAmount.value = entry.amount;
 };
 
@@ -97,29 +106,34 @@ const cancelEdit = () => {
 // make day can select
 const days = ['Monday', 'Tuesday', 'Wednesday', 'Thursday', 'Friday', 'Saturday', 'Sunday'];
 
+const formatDate = (dateString) => {
+  const [day, month, year] = dateString.split('/');
+  return `${year}-${month}-${day}`;
+};
+
 const saveEdit = async (entry) => {
   const updatedEntry = {
-    ...entry,
     day: editDay.value,
-    date: editDate.value,
-    detail: editDetail.value,
     amount: editAmount.value,
+    source: editDetail.value,
+    date: formatDate(editDate.value),
   };
 
-  const response = await fetch(`http://localhost:3000/dailies/${entry.id}`, {
+  const response = await fetch(`${apiUrl}/daily/${entry.id}`, {
     method: 'PUT',
-    headers: { 'Content-Type': 'application/json' },
+    headers: headers,
     body: JSON.stringify(updatedEntry),
   });
 
   if (response.ok) {
     const updatedDaily = await response.json();
     const index = props.weekData.findIndex((i) => i.id === updatedDaily.id);
-    props.weekData[index] = updatedDaily;
+    props.weekData.splice(index, 1, updatedDaily); // Update the array reactively
     cancelEdit();
     emit('update-success');
   } else {
-    console.error('Failed to update daily entry');
+    const errorText = await response.text();
+    console.error('Failed to update daily entry:', errorText);
   }
 };
 
@@ -130,12 +144,14 @@ const confirmDelete = (entry) => {
 };
 
 const deleteEntry = async (entry) => {
-  const response = await fetch(`http://localhost:3000/dailies/${entry.id}`, {
+  const response = await fetch(`${apiUrl}/daily/${entry.id}`, {
     method: 'DELETE',
+    headers: headers,
   });
 
   if (response.ok) {
-    props.weekData = props.weekData.filter((i) => i.id !== entry.id);
+    const index = props.weekData.findIndex((i) => i.id === entry.id);
+    props.weekData.splice(index, 1); // Remove the entry reactively
     emit('update-success');
   } else {
     console.error('Failed to delete daily entry');

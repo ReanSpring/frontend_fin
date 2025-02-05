@@ -1,23 +1,24 @@
 <template>
-  <main class="flex justify-center flex-col px-10 mb-10">
+  <main class="flex justify-center flex-col px-10 my-10">
     <!-- Header -->
     <h1 class="text-4xl pacifico-regular font-medium w-full text-center mb-8">
-      Welcome back Sen Sunneng to your Financial Management System
+      Welcome {{ username }} to your Financial Management System
     </h1>
     <section class="grid gap-6 mb-10">
-      <div
-        v-for="income in incomes"
-        :key="income.id"
-        class="bg-gray-100 p-6 rounded shadow-md"
-      >
+    <div
+      v-for="income in incomes"
+      :key="income.id"
+      class="bg-gray-100 p-6 rounded shadow-md flex justify-between items-center"
+    >
+      <div class="flex flex-col w-full">
         <input
           :id="income.source"
-          v-model.number="income.source"
+          v-model="income.source"
           @change="updateIncome(income)"
           type="text"
-          class="text-black font-semibold text-xl bg-transparent border-gray-300 rounded px-2"
+          class="text-black font-semibold text-xl bg-transparent border-gray-300 rounded px-2 mb-2"
         />
-        <div class="flex items-center gap-2 mt-2">
+        <div class="flex items-center gap-2">
           <input
             :id="income.source"
             v-model.number="income.amount"
@@ -28,15 +29,67 @@
           <span class="text-red-600 font-semibold text-xl">USD</span>
         </div>
       </div>
-      <div
-        class="bg-green-100 p-6 rounded shadow-md flex items-center justify-between"
+      <button
+        @click="deleteIncome(income.id)"
+        class="bg-red-500 text-white py-1 px-3 rounded hover:bg-red-700 transition duration-300 ml-4"
       >
-        <span class="text-xl font-bold text-gray-800">💵 Total Income</span>
-        <span class="text-2xl font-bold text-green-600"
-          >{{ totalIncomes }} USD</span
-        >
+        Delete
+      </button>
+    </div>
+    <div
+      class="bg-green-100 p-6 rounded shadow-md flex items-center justify-between"
+    >
+      <span class="text-xl font-bold text-gray-800">💵 Total Income</span>
+      <span class="text-2xl font-bold text-green-600">{{ totalIncomes }} USD</span>
+
+
+
+    </div>
+    <button
+      @click="showAddIncome = true"
+      class="bg-blue-500 text-white py-2 px-4 rounded hover:bg-blue-700 transition duration-300 mt-4"
+    >
+      Add New Income
+    </button>
+
+    <div v-if="showAddIncome" class="fixed inset-0 bg-gray-800 bg-opacity-75 flex items-center justify-center">
+      <div class="bg-white p-6 rounded shadow-md w-1/3">
+        <h2 class="text-2xl font-bold mb-4">Add New Income</h2>
+        <div class="mb-4">
+          <label class="block text-gray-700 text-sm font-bold mb-2" for="newIncomeSource">Source</label>
+          <input
+            id="newIncomeSource"
+            v-model="newIncome.source"
+            type="text"
+            class="shadow appearance-none border rounded w-full py-2 px-3 text-gray-700 leading-tight focus:outline-none focus:shadow-outline"
+          />
+        </div>
+        <div class="mb-4">
+          <label class="block text-gray-700 text-sm font-bold mb-2" for="newIncomeAmount">Amount</label>
+          <input
+            id="newIncomeAmount"
+            v-model.number="newIncome.amount"
+            type="number"
+            class="shadow appearance-none border rounded w-full py-2 px-3 text-gray-700 leading-tight focus:outline-none focus:shadow-outline"
+          />
+        </div>
+        <div class="flex justify-end">
+          <button
+            @click="addIncome"
+            class="bg-blue-500 text-white py-2 px-4 rounded hover:bg-blue-700 transition duration-300 mr-2"
+          >
+            Add
+          </button>
+          <button
+            @click="showAddIncome = false"
+            class="bg-gray-500 text-white py-2 px-4 rounded hover:bg-gray-700 transition duration-300"
+          >
+            Cancel
+          </button>
+        </div>
       </div>
-    </section>
+    </div>
+  </section>
 
     <!-- Tab Navigation -->
     <div class="flex justify-center gap-4 mb-6">
@@ -107,7 +160,7 @@
           <span class="text-red-600 font-semibold text-xl">USD</span>
           </div>
           <textarea
-            v-model="newDaily.detail"
+            v-model="newDaily.source"
             placeholder="List your spending details"
             class="text-gray-600 bg-transparent w-96   border-gray-300 rounded px-2"
           ></textarea>
@@ -136,6 +189,16 @@
 
     <div v-if="activeTab === 'month'">
       <MonthlySpendingOverview :monthData="months" />
+      <div
+        class="bg-blue-100 p-6 rounded shadow-md flex items-center justify-between mt-4"
+      >
+        <span class="text-xl font-bold text-gray-800"
+          >🗓️ Remaining Balance</span
+        >
+        <span class="text-2xl font-bold text-blue-600"
+          >{{ totalSpending }} USD</span
+        >
+      </div>
 
     </div>
     <div v-if="activeTab === 'year'">
@@ -149,20 +212,31 @@ import { ref, watch, computed, onMounted } from "vue";
 import DailySpendingOverview from "../components/DailySpendingOverview.vue";
 import MonthlySpendingOverview from "../components/MonthlySpendingOverview.vue";
 import YearlySpendingOverview from "../components/YearlySpendingOverview.vue";
-import { data } from "autoprefixer";
+import Cookies from "universal-cookie";
 
 // Initial data
+const apiUrl = import.meta.env.VITE_APP_API_URL;
+const cookies = new Cookies();
+const token = cookies.get('authToken'); 
+const username = cookies.get('username');
+const showAddIncome = ref(false);
+
+const headers = {
+    'Authorization': `Bearer ${token}`,
+    'Content-Type': 'application/json'
+};
+
 const cambodia_airways = ref(270);
 const prince_foundation = ref(50);
 const total = ref(cambodia_airways.value + prince_foundation.value);
-const incomes = ref();
+const incomes = ref([]);
 const totalIncomes = ref(0);
-const dailies = ref();
+const dailies = ref([]);
 const totalDailies = ref(0);
 const show = ref(false);
-const years = ref();
-const months = ref();
-
+const years = ref([]);
+const months = ref([]);
+const weeks = ref([]);
 
 const daysOfWeek = [
   "Sunday",
@@ -174,12 +248,12 @@ const daysOfWeek = [
   "Saturday",
 ];
 const today = new Date().getDay();
-console.log(years);
 
 const newDaily = ref({
   day: daysOfWeek[today],
-  detail: "",
+  source: "",
   amount: 0,
+  date: new Date().toLocaleDateString()
 });
 
 // Watch for changes in income sources
@@ -189,14 +263,26 @@ watch([cambodia_airways, prince_foundation], () => {
 
 // fetch data from API with axios
 const fetchIncome = async () => {
-  const response = await fetch("http://localhost:3000/incomes");
-  const response2 = await fetch("http://localhost:3000/dailies");
-  const responseyear = await fetch("http://localhost:3000/dailies/calculate_years");
-  const responsemonth = await fetch("http://localhost:3000/dailies/calculate_month");
-  incomes.value = await response.json();
-  dailies.value = await response2.json();
-  years.value = await responseyear.json();
-  months.value = await responsemonth.json();
+  const response = await fetch(`${apiUrl}/income`, { headers });
+  const response2 = await fetch(`${apiUrl}/daily`, { headers });
+  const responseyear = await fetch(`${apiUrl}/yearly`, { headers });
+  const responsemonth = await fetch(`${apiUrl}/monthly`, { headers });
+  const responseweekly = await fetch(`${apiUrl}/weekly`, { headers });
+
+  const dataIncome = (await response.json()).data;
+  const dataDaily = (await response2.json()).data;
+  const dataYear = (await responseyear.json()).data;
+  const dataMonth = (await responsemonth.json()).data;
+  const dataWeekly = (await responseweekly.json()).data;
+
+  incomes.value = dataIncome;
+  dailies.value = dataDaily;
+  years.value = dataYear;
+  months.value = dataMonth;
+  weeks.value = dataWeekly;
+
+
+  console.log(months.value);
 
   totalIncomes.value = incomes.value.reduce(
     (total, income) => total + income.amount,
@@ -207,16 +293,16 @@ const fetchIncome = async () => {
     0
   );
 
-  // fomart date
+  // format date
   dailies.value.forEach((daily) => {
     daily.date = new Date(daily.date).toLocaleDateString();
   });
 };
 
 const updateIncome = async (income) => {
-  const response = await fetch(`http://localhost:3000/incomes/${income.id}`, {
+  const response = await fetch(`${apiUrl}/income/${income.id}`, {
     method: "PUT",
-    headers: { "Content-Type": "application/json" },
+    headers: headers,
     body: JSON.stringify(income),
   });
   const updatedIncome = await response.json();
@@ -230,90 +316,130 @@ const updateIncome = async (income) => {
   );
 };
 
+const formatDate = (dateString) => {
+  const [day, month, year] = dateString.split('/');
+  return `${year}-${month}-${day}`;
+};
+
 // post daily spend
 const postDaily = async () => {
   try {
-    const response = await fetch("http://localhost:3000/dailies", {
+    // Format the date in newDaily.value
+    newDaily.value.date = formatDate(newDaily.value.date);
+
+    const response = await fetch(`${apiUrl}/daily`, {
       method: "POST",
-      headers: { "Content-Type": "application/json" },
-      body: JSON.stringify(newDaily.value),
+      headers: headers,
+      // body: JSON.stringify(newDaily.value),
+      body: JSON.stringify({
+        day: newDaily.value.day,
+        amount: newDaily.value.amount,
+        source: newDaily.value.source,
+        date: newDaily.value.date,
+      }),
     });
 
-    if (response.ok) {
-      const daily = await response.json();
-      dailies.value.push(daily);
-      totalDailies.value = dailies.value.reduce(
-        (total, daily) => total + daily.amount,
-        0
-      );
-
-      // Clear form data
-      newDaily.value = {
-        day: daysOfWeek[new Date().getDay()],
-        detail: "",
-        amount: 0,
-      };
-
-      // Close form (assuming you have a variable to control form visibility)
-      show.value = false;
-      fetchIncome();
-    } else {
-      console.error("Failed to post daily data");
+    if (!response.ok) {
+      const errorData = await response.json();
+      console.error("Failed to post daily data:", errorData);
+      return;
     }
+
+    const data = await response.json();
+    dailies.value.push(data);
+    totalDailies.value = dailies.value.reduce(
+      (total, daily) => total + daily.amount,
+      0
+    );
+    newDaily.value = {
+      day: daysOfWeek[today],
+      source: "",
+      amount: 0,
+      date: new Date().toLocaleDateString(),
+    };
+    fetchIncome();
+    show.value = false;
   } catch (error) {
     console.error("Error posting daily data:", error);
   }
 };
 
-// update daily spend
-const updateDaily = async (daily) => {
-  const response = await fetch(`http://localhost:3000/dailies/${daily.id}`, {
-    method: "PUT",
-    headers: { "Content-Type": "application/json" },
-    body: JSON.stringify(daily),
+// delete income
+const deleteIncome = async (id) => {
+  const isConfirmed = confirm("Are you sure you want to delete this income?");
+  if (!isConfirmed) {
+    return;
+  }
+
+  const response = await fetch(`${apiUrl}/income/${id}`, {
+    method: "DELETE",
+    headers: headers,
   });
-  const updatedDaily = await response.json();
-  const index = dailies.value.findIndex((i) => i.id === updatedDaily.id);
 
-  dailies.value[index] = updatedDaily;
-
-  totalDailies.value = dailies.value.reduce(
-    (total, daily) => total + daily.amount,
-    0
-  );
+  if (response.ok) {
+    incomes.value = incomes.value.filter((income) => income.id !== id);
+    totalIncomes.value = incomes.value.reduce(
+      (total, income) => total + income.amount,
+      0
+    );
+  } else {
+    const errorData = await response.json();
+    console.error("Failed to delete income:", errorData);
+  }
 };
+
+// Add new income
+const newIncome = ref({
+  source: "",
+  amount: 0,
+});
+
+const addIncome = async () => {
+  try {
+    const response = await fetch(`${apiUrl}/income`, {
+      method: "POST",
+      headers: headers,
+      body: JSON.stringify(newIncome.value),
+    });
+
+    if (!response.ok) {
+      const errorData = await response.json();
+      console.error("Failed to add new income:", errorData);
+      return;
+    }
+
+    const data = await response.json();
+    incomes.value.push(data);
+    totalIncomes.value = incomes.value.reduce(
+      (total, income) => total + income.amount,
+      0
+    );
+    newIncome.value = {
+      source: "",
+      amount: 0,
+    };
+    fetchIncome();
+    showAddIncome.value = false;
+  } catch (error) {
+    console.error("Error adding new income:", error);
+  }
+};
+
+// calculate total spending 1 month with total income
+const totalSpending = computed(() => {
+  return totalIncomes.value - totalDailies.value;
+});
+
+// show Remaining balance
+const remainingBalance = computed(() => {
+  return total.value - totalDailies.value;
+});
+
+
+
 
 onMounted(fetchIncome);
 
-// Data for yearly spending
-const yearData = ref({
-  year: "2025",
-  months: [
-    { month: "January", totalAmount: 200 },
-    { month: "February", totalAmount: 180 },
-    { month: "March", totalAmount: 220 },
-    { month: "April", totalAmount: 190 },
-    { month: "May", totalAmount: 210 },
-    { month: "June", totalAmount: 230 },
-    { month: "July", totalAmount: 240 },
-    { month: "August", totalAmount: 250 },
-    { month: "September", totalAmount: 220 },
-    { month: "October", totalAmount: 240 },
-    { month: "November", totalAmount: 260 },
-    { month: "December", totalAmount: 280 },
-  ],
-  totalAmount: 0, // Initially 0, will be calculated
-});
-
-// Computed property to calculate total weekly spending
-const totalWeeklySpending = computed(() => {
-  return weekData.value.reduce((total, day) => total + day.totalAmount, 0);
-});
-
-// Computed property to calculate total monthly spending
-const totalMonthlySpending = computed(() => {
-  return monthData.value.reduce((total, month) => total + month.totalAmount, 0);
-});
 
 // Manage the active tab state
 const activeTab = ref("day");
@@ -322,11 +448,6 @@ const activeTab = ref("day");
 const setActiveTab = (tab) => {
   activeTab.value = tab;
 };
-
-// Compute total income
-watch([cambodia_airways, prince_foundation], () => {
-  total.value = cambodia_airways.value + prince_foundation.value;
-});
 </script>
 
 <style scoped>

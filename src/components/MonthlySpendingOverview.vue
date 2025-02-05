@@ -12,10 +12,10 @@
           📅 {{ entry.month }}
         </h3>
         <div class="mb-4">
-          <h4 class="text-lg font-semibold text-gray-700">🗒️ Weekly Totals:</h4>
+          <h4 class="text-lg font-semibold text-gray-700">🗒️ Daily Totals:</h4>
           <ul class="list-disc pl-5 mt-2 text-gray-800">
-            <li v-for="(week, index) in entry.weekData" :key="index" class="mb-1">
-              Week {{ index + 1 }}: {{ week.amount }} USD
+            <li v-for="daily in entry.dailies" :key="daily.id" class="mb-1">
+              {{ daily.day }} ({{ daily.date }}): {{ daily.amount }} USD - {{ daily.source }}
             </li>
           </ul>
         </div>
@@ -39,13 +39,13 @@ const props = defineProps({
   }
 });
 
-// Function to calculate total monthly spending by summing weekly totals
-const calculateMonthlyTotal = (weekData) => {
-  return weekData.reduce((total, week) => total + week.amount, 0);
+// Function to calculate total monthly spending by summing daily totals
+const calculateMonthlyTotal = (dailies) => {
+  return dailies.reduce((total, daily) => total + daily.amount, 0);
 };
 
-// Modify the monthData before rendering to include total calculated from weekly data
+// Modify the monthData before rendering to include total calculated from daily data
 props.monthData.forEach((entry) => {
-  entry.totalAmount = calculateMonthlyTotal(entry.weekData);
+  entry.totalAmount = calculateMonthlyTotal(entry.dailies);
 });
 </script>

@@ -78,6 +78,7 @@ import { ref } from "vue";
 import { useRouter } from "vue-router";
 import Cookies from "universal-cookie";
 
+const apiUrl = import.meta.env.VITE_APP_API_URL;
 const email = ref("");
 const password = ref("");
 const router = useRouter();
@@ -95,7 +96,7 @@ const handleLogin = async () => {
   };
 
   try {
-    const response = await fetch("http://localhost:3000/auth/login", {
+    const response = await fetch(`${apiUrl}/auth/login`, {
       method: "POST",
       headers: { "Content-Type": "application/json" },
       body: JSON.stringify(loginData),
@@ -104,7 +105,7 @@ const handleLogin = async () => {
 
     if (response.ok) {
       cookies.set("authToken", data.token, { path: "/" }); // Store the token in a cookie
-      // not use router push to navigate to the home page
+      cookies.set("username", data.username, { path: "/" }); // Store the username in a cookie
       location.href = "/";
     } else {
       alert(data.message || "Login failed. Please try again.");
