@@ -109,6 +109,18 @@
         :class="[
           'py-2 px-4 rounded',
           {
+            'bg-blue-500 text-white': activeTab === 'week',
+            'bg-gray-100 text-gray-800': activeTab !== 'week',
+          },
+        ]"
+        @click="setActiveTab('week')"
+      >
+        Weekly
+      </button>
+      <button
+        :class="[
+          'py-2 px-4 rounded',
+          {
             'bg-blue-500 text-white': activeTab === 'month',
             'bg-gray-100 text-gray-800': activeTab !== 'month',
           },
@@ -186,8 +198,12 @@
         >
       </div>
     </div>
+    <div v-if="activeTab === 'week'">
+      <WeeklySpending :weekData="weeks" />
+    </div>
 
     <div v-if="activeTab === 'month'">
+
       <MonthlySpendingOverview :monthData="months" />
       <div
         class="bg-blue-100 p-6 rounded shadow-md flex items-center justify-between mt-4"
@@ -212,6 +228,7 @@ import { ref, watch, computed, onMounted } from "vue";
 import DailySpendingOverview from "../components/DailySpendingOverview.vue";
 import MonthlySpendingOverview from "../components/MonthlySpendingOverview.vue";
 import YearlySpendingOverview from "../components/YearlySpendingOverview.vue";
+import WeeklySpending from "../components/WeeklySpending.vue";
 import Cookies from "universal-cookie";
 
 // Initial data
@@ -282,7 +299,7 @@ const fetchIncome = async () => {
   weeks.value = dataWeekly;
 
 
-  console.log(months.value);
+
 
   totalIncomes.value = incomes.value.reduce(
     (total, income) => total + income.amount,

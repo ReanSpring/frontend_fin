@@ -1,6 +1,8 @@
 import { createRouter, createWebHistory } from 'vue-router';
 import HomeView from '../views/HomeView.vue';
 import LoginView from '../views/Login.vue';
+import BalanceView from '../views/BalanceView.vue';
+import SignUp from '../views/SignUp.vue';
 import Cookies from 'universal-cookie';
 
 const cookies = new Cookies();
@@ -23,6 +25,16 @@ const routes = [
     name: 'login',
     component: LoginView,
   },
+  {
+    path: '/balance',
+    name: 'balance',
+    component: BalanceView,
+  },
+  {
+    path: '/signup',
+    name: 'signup',
+    component: SignUp,
+  }
 ];
 
 const router = createRouter({
@@ -33,7 +45,11 @@ const router = createRouter({
 router.beforeEach((to, from, next) => {
   const authToken = cookies.get('authToken');
   if (to.matched.some(record => record.meta.requiresAuth) && !authToken) {
-    next({ name: 'login' });
+    if (to.name === 'login' || to.name === 'signup') {
+      next();
+    } else {
+      next({ name: 'login' });
+    }
   } else {
     next();
   }
