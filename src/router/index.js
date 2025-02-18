@@ -4,6 +4,9 @@ import LoginView from '../views/Login.vue';
 import BalanceView from '../views/BalanceView.vue';
 import SignUp from '../views/SignUp.vue';
 import Cookies from 'universal-cookie';
+import ProfileView from '../views/ProfileView.vue';
+import TaskView from '../views/TaskView.vue';
+import Newthing from '../views/Newthing.vue';
 
 const cookies = new Cookies();
 
@@ -34,6 +37,21 @@ const routes = [
     path: '/signup',
     name: 'signup',
     component: SignUp,
+  },
+  {
+    path: '/profile',
+    name: 'profile',
+    component: ProfileView,
+  },
+  {
+    path: '/task',
+    name: 'task',
+    component: TaskView,
+  },
+  {
+    path: '/newthing',
+    name: 'newthing',
+    component: Newthing,
   }
 ];
 

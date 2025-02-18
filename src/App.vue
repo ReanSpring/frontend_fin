@@ -1,33 +1,34 @@
 <script setup>
-import { RouterView } from 'vue-router';
-import Cookies from 'universal-cookie';
-import Login from './views/Login.vue';
-import Balance from './views/BalanceView.vue';
-import { ref } from 'vue';
+import { RouterView } from "vue-router";
+import Cookies from "universal-cookie";
+import Login from "./views/Login.vue";
+import Balance from "./views/BalanceView.vue";
+import Navbar from "./layout/Navbar.vue";
+import { ref } from "vue";
 
 const cookies = new Cookies();
-const authToken = ref(cookies.get('authToken'));
+const authToken = ref(cookies.get("authToken"));
 const showBalance = ref(false);
+const showNewthing = ref(false);
 
 const handleLogout = () => {
-  cookies.remove('authToken', { path: '/' });
+  cookies.remove("authToken", { path: "/" });
   authToken.value = null;
   location.reload();
 };
 
-const toggleBalanceView = () => {
-
-};
+const toggleBalanceView = () => {};
 </script>
 
 <template>
   <div>
     <div v-if="authToken">
-      <button @click="handleLogout" class="logout-button">Logout</button>
-      <!-- click route to page balance -->
-       <!-- <router-link to="/balance" class="balance-button mr-2">Balance</router-link> -->
+      <Navbar />
+    
       <RouterView />
-      <Balance v-if="showBalance" />
+
+
+
     </div>
     <Login v-else />
   </div>

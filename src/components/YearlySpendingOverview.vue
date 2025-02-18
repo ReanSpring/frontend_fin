@@ -7,7 +7,14 @@
         <h4 class="text-lg font-semibold text-gray-700">📅 Monthly Totals:</h4>
         <ul class="list-disc pl-5 mt-2 text-gray-800">
           <li v-for="(month, index) in yearData.monthlies" :key="index" class="mb-1">
-            {{ month.month }}: {{ month.amount }} USD
+            <div>
+              {{ month.month }}: {{ month.amount }} USD
+              <!-- <ul class="list-disc pl-5 mt-2 text-gray-800">
+                <li v-for="daily in month.dailies" :key="daily.id" class="mb-1">
+                  {{ daily.day }} ({{ daily.date }}): {{ daily.amount }} USD - {{ daily.source }}
+                </li>
+              </ul> -->
+            </div>
           </li>
         </ul>
       </div>
